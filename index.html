@@ -1,0 +1,1380 @@
+<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<title>EV Charge Log — Wuling Starlight</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/chartjs-plugin-datalabels/2.2.0/chartjs-plugin-datalabels.min.js"></script>
+<style>
+:root {
+  --accent:#00c896; --accent-h:#00a87e;
+  --red:#ff6b6b; --green:#43e97b; --yellow:#f9c74f;
+  --blue:#4fc3f7; --purple:#ce93d8; --orange:#ffb74d;
+  --teal:#26c6da; --lime:#cddc39;
+  --bg:#0c1118; --surface:#141920; --card:#1a2230; --border:#263040;
+  --text:#e0eaf6; --muted:#7a8fa8; --inp:#101820; --nav-bg:#101820;
+  --shadow:rgba(0,0,0,.45); --row-hover:rgba(0,200,150,.06);
+  --divider:rgba(255,255,255,.04); --bar-bg:rgba(255,255,255,.07);
+  color-scheme: dark;
+}
+[data-theme="dark"] {
+  --bg:#0c1118; --surface:#141920; --card:#1a2230; --border:#263040;
+  --text:#e0eaf6; --muted:#7a8fa8; --inp:#101820; --nav-bg:#101820;
+  --shadow:rgba(0,0,0,.45); --row-hover:rgba(0,200,150,.06);
+  --divider:rgba(255,255,255,.04); --bar-bg:rgba(255,255,255,.07);
+  color-scheme: dark;
+}
+[data-theme="light"] {
+  --bg:#f0f4f8; --surface:#ffffff; --card:#ffffff; --border:#d8e3ed;
+  --text:#1a2230; --muted:#6b7a8d; --inp:#eef2f7; --nav-bg:#ffffff;
+  --shadow:rgba(0,0,0,.08); --row-hover:rgba(0,200,150,.05);
+  --divider:rgba(0,0,0,.05); --bar-bg:rgba(0,0,0,.07);
+  color-scheme: light;
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{background:var(--bg);color:var(--text);font-family:'Segoe UI',system-ui,-apple-system,sans-serif;min-height:100vh;transition:background .25s,color .25s;}
+
+/* TOP NAV */
+.top-nav{background:var(--nav-bg);border-bottom:1px solid var(--border);padding:0 20px;display:flex;align-items:center;position:sticky;top:0;z-index:50;box-shadow:0 1px 8px var(--shadow);}
+.nav-brand{font-size:1.05rem;font-weight:700;background:linear-gradient(90deg,#00c896,#4fc3f7);-webkit-background-clip:text;-webkit-text-fill-color:transparent;padding:14px 16px 14px 0;margin-right:8px;white-space:nowrap;flex-shrink:0;}
+.nav-tab{padding:15px 12px;font-size:.83rem;font-weight:600;color:var(--muted);cursor:pointer;border:none;background:transparent;border-bottom:2px solid transparent;transition:all .2s;white-space:nowrap;}
+.nav-tab:hover{color:var(--text);}
+.nav-tab.active{color:#00c896;border-bottom-color:var(--accent);}
+.nav-right{margin-left:auto;display:flex;gap:6px;align-items:center;}
+.theme-btn{background:transparent;border:1px solid var(--border);border-radius:18px;padding:5px 10px;cursor:pointer;font-size:.78rem;color:var(--muted);transition:all .2s;}
+.theme-btn:hover{color:var(--text);border-color:var(--muted);}
+.status-dot{width:7px;height:7px;border-radius:50%;background:var(--muted);flex-shrink:0;transition:background .4s;}
+.status-dot.ok{background:var(--green);}
+.status-dot.err{background:var(--red);}
+.status-dot.loading{background:var(--yellow);animation:pulse 1s infinite;}
+.status-label{font-size:.71rem;color:var(--muted);}
+@keyframes pulse{0%,100%{opacity:1;}50%{opacity:.35;}}
+.offline-pill{background:rgba(249,199,79,.12);border:1px solid rgba(249,199,79,.35);color:var(--yellow);border-radius:6px;padding:3px 8px;font-size:.71rem;font-weight:600;display:none;align-items:center;gap:4px;cursor:pointer;}
+.offline-pill.show{display:inline-flex;}
+
+/* BOTTOM NAV */
+.bottom-nav{display:none;position:fixed;bottom:0;left:0;right:0;background:var(--nav-bg);border-top:1px solid var(--border);z-index:50;padding-bottom:env(safe-area-inset-bottom);box-shadow:0 -2px 16px var(--shadow);}
+.bn-inner{display:flex;height:58px;}
+.bn-tab{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;border:none;background:transparent;color:var(--muted);cursor:pointer;font-size:.63rem;font-weight:600;transition:color .2s;}
+.bn-tab .ico{font-size:1.3rem;line-height:1;transition:transform .2s;}
+.bn-tab.active{color:var(--accent);}
+.bn-tab.active .ico{transform:scale(1.12);}
+
+/* FAB */
+.fab{display:none;position:fixed;bottom:70px;right:18px;width:50px;height:50px;border-radius:50%;background:var(--accent);color:#fff;border:none;font-size:1.45rem;cursor:pointer;box-shadow:0 4px 20px rgba(0,200,150,.5);z-index:49;align-items:center;justify-content:center;transition:transform .15s,box-shadow .15s;}
+.fab:active{transform:scale(.93);}
+
+/* BUTTONS */
+.btn{padding:7px 14px;border-radius:8px;font-size:.8rem;font-weight:600;cursor:pointer;border:none;transition:all .2s;white-space:nowrap;display:inline-flex;align-items:center;gap:5px;}
+.btn-primary{background:var(--accent);color:#fff;}
+.btn-primary:hover{background:var(--accent-h);}
+.btn-ghost{background:transparent;color:var(--muted);border:1px solid var(--border);}
+.btn-ghost:hover{color:var(--text);border-color:var(--muted);}
+.btn-danger{background:rgba(255,107,107,.12);color:var(--red);border:1px solid rgba(255,107,107,.25);}
+.btn-danger:hover{background:rgba(255,107,107,.22);}
+.btn-sm{padding:4px 10px;font-size:.74rem;}
+.btn-icon{padding:5px 7px;font-size:.9rem;}
+.btn:disabled{opacity:.4;cursor:not-allowed;}
+
+/* PAGES */
+.page{display:none;padding:20px 22px;max-width:1380px;margin:0 auto;}
+.page.active{display:block;}
+
+/* CARD */
+.card{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:18px;box-shadow:0 2px 8px var(--shadow);}
+.card-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;flex-wrap:wrap;gap:7px;}
+.card-title{font-size:.71rem;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.08em;}
+.grid-4{display:grid;grid-template-columns:repeat(4,1fr);gap:13px;margin-bottom:16px;}
+.grid-2{display:grid;grid-template-columns:1fr 1fr;gap:15px;margin-bottom:16px;}
+.grid-5{display:grid;grid-template-columns:repeat(5,1fr);gap:13px;margin-bottom:16px;}
+.mb16{margin-bottom:16px;}
+
+/* KPI */
+.kpi{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:16px;position:relative;overflow:hidden;box-shadow:0 2px 8px var(--shadow);}
+.kpi::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;}
+.kpi.teal::before{background:linear-gradient(90deg,#00c896,#4fc3f7);}
+.kpi.blue::before{background:linear-gradient(90deg,#4fc3f7,#1976d2);}
+.kpi.green::before{background:linear-gradient(90deg,#43e97b,#1de9b6);}
+.kpi.yellow::before{background:linear-gradient(90deg,#f9c74f,#f6771b);}
+.kpi.purple::before{background:linear-gradient(90deg,#ce93d8,#9c27b0);}
+.kpi.red::before{background:linear-gradient(90deg,#ff6b6b,#e53935);}
+.kpi .lbl{font-size:.69rem;color:var(--muted);text-transform:uppercase;letter-spacing:.07em;margin-bottom:5px;}
+.kpi .val{font-size:1.55rem;font-weight:700;}
+.kpi .sub{font-size:.72rem;color:var(--muted);margin-top:3px;}
+
+/* LEDGER TABLE */
+.toolbar{display:flex;gap:7px;margin-bottom:13px;flex-wrap:wrap;align-items:center;}
+.si{background:var(--inp);border:1px solid var(--border);border-radius:8px;padding:7px 11px;color:var(--text);font-size:.81rem;outline:none;}
+.si:focus{border-color:var(--accent);}
+.si::placeholder{color:var(--muted);}
+select.si{cursor:pointer;}
+.spacer{flex:1;}
+.table-wrap{overflow-x:auto;border-radius:10px;border:1px solid var(--border);}
+table{width:100%;border-collapse:collapse;font-size:.8rem;}
+thead th{padding:8px 12px;text-align:left;color:var(--muted);font-weight:700;text-transform:uppercase;font-size:.66rem;letter-spacing:.06em;background:var(--surface);border-bottom:1px solid var(--border);white-space:nowrap;cursor:pointer;user-select:none;}
+thead th:hover{color:var(--text);}
+tbody td{padding:8px 12px;border-bottom:1px solid var(--divider);vertical-align:middle;}
+tbody tr:last-child td{border-bottom:none;}
+tbody tr:hover td{background:var(--row-hover);}
+.charger-pill{display:inline-block;padding:2px 7px;border-radius:5px;font-size:.68rem;font-weight:600;}
+.action-btns{display:flex;gap:4px;}
+
+/* MODAL */
+.overlay{position:fixed;inset:0;background:rgba(0,0,0,.55);backdrop-filter:blur(4px);z-index:100;display:none;align-items:flex-end;justify-content:center;}
+.overlay.open{display:flex;}
+.modal{background:var(--card);border:1px solid var(--border);border-radius:20px 20px 0 0;width:100%;max-width:560px;max-height:93vh;overflow-y:auto;box-shadow:0 -8px 40px var(--shadow);}
+.modal-header{padding:18px 20px 0;display:flex;align-items:center;justify-content:space-between;}
+.modal-title{font-size:.96rem;font-weight:700;}
+.modal-close{background:transparent;border:none;color:var(--muted);font-size:1.35rem;cursor:pointer;line-height:1;padding:4px;}
+.modal-close:hover{color:var(--text);}
+.modal-body{padding:16px 20px;}
+.modal-footer{padding:0 20px 22px;display:flex;gap:7px;justify-content:flex-end;}
+
+/* FORM */
+.form-grid{display:grid;grid-template-columns:1fr 1fr;gap:11px;}
+.form-group{display:flex;flex-direction:column;gap:4px;}
+.form-group.full{grid-column:1/-1;}
+.form-label{font-size:.71rem;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;}
+.fc{background:var(--inp);border:1px solid var(--border);border-radius:8px;padding:9px 12px;color:var(--text);font-size:.85rem;outline:none;width:100%;}
+.fc:focus{border-color:var(--accent);}
+.fc::placeholder{color:var(--muted);opacity:.5;}
+select.fc{cursor:pointer;}
+.type-toggle{display:flex;border:1px solid var(--border);border-radius:8px;overflow:hidden;}
+.type-btn{flex:1;padding:9px;font-size:.82rem;font-weight:600;border:none;background:transparent;color:var(--muted);cursor:pointer;transition:all .2s;}
+.type-btn.active-home{background:rgba(0,200,150,.18);color:var(--accent);}
+.type-btn.active-pub{background:rgba(79,195,247,.18);color:var(--blue);}
+.type-btn.active-dc{background:rgba(249,199,79,.18);color:var(--yellow);}
+
+/* SETUP */
+.setup-overlay{position:fixed;inset:0;background:var(--bg);z-index:200;display:none;align-items:center;justify-content:center;padding:16px;}
+.setup-overlay.open{display:flex;}
+.setup-box{background:var(--card);border:1px solid var(--border);border-radius:18px;width:640px;max-width:100%;padding:30px;box-shadow:0 24px 72px var(--shadow);max-height:90vh;overflow-y:auto;}
+.setup-box h2{font-size:1.2rem;font-weight:700;margin-bottom:5px;}
+.setup-box .sub{color:var(--muted);font-size:.83rem;margin-bottom:22px;line-height:1.6;}
+.steps{display:flex;flex-direction:column;gap:11px;margin-bottom:22px;}
+.step{display:flex;gap:11px;align-items:flex-start;}
+.step-num{width:23px;height:23px;border-radius:50%;background:var(--accent);color:#fff;font-size:.72rem;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:1px;}
+.step-title{font-size:.86rem;font-weight:600;margin-bottom:2px;}
+.step-desc{font-size:.77rem;color:var(--muted);line-height:1.5;}
+.step-desc code{background:var(--bar-bg);padding:1px 5px;border-radius:4px;font-family:monospace;color:#00c896;}
+.url-row{display:flex;gap:7px;margin-top:14px;}
+.url-input{flex:1;background:var(--inp);border:1px solid var(--border);border-radius:8px;padding:10px 13px;color:var(--text);font-size:.84rem;outline:none;}
+.url-input:focus{border-color:var(--accent);}
+.connect-msg{font-size:.78rem;margin-top:9px;min-height:18px;}
+.connect-msg.ok{color:var(--green);}
+.connect-msg.err{color:var(--red);}
+.script-box{background:var(--inp);border:1px solid var(--border);border-radius:8px;padding:12px;margin-top:8px;font-family:monospace;font-size:.72rem;color:#00c896;white-space:pre-wrap;max-height:200px;overflow-y:auto;line-height:1.5;}
+.copy-btn{margin-top:6px;font-size:.73rem;}
+
+/* LOADING */
+.loading-overlay{position:fixed;inset:0;background:rgba(12,17,24,.75);z-index:150;display:none;align-items:center;justify-content:center;flex-direction:column;gap:13px;backdrop-filter:blur(3px);}
+.loading-overlay.open{display:flex;}
+.spinner{width:34px;height:34px;border:3px solid var(--border);border-top-color:var(--accent);border-radius:50%;animation:spin .7s linear infinite;}
+@keyframes spin{to{transform:rotate(360deg);}}
+.loading-msg{font-size:.84rem;color:var(--muted);}
+
+/* TOAST */
+.toast-wrap{position:fixed;bottom:72px;right:16px;z-index:300;display:flex;flex-direction:column;gap:6px;max-width:280px;}
+.toast{background:var(--card);border:1px solid var(--border);border-radius:10px;padding:10px 14px;font-size:.8rem;box-shadow:0 6px 24px var(--shadow);animation:slideIn .22s ease;display:flex;align-items:center;gap:7px;}
+@keyframes slideIn{from{transform:translateX(60px);opacity:0;}to{transform:translateX(0);opacity:1;}}
+.toast.success{border-color:rgba(67,233,123,.4);}
+.toast.error{border-color:rgba(255,107,107,.4);}
+
+/* SETTINGS */
+.s-section{margin-bottom:22px;}
+.s-section h3{font-size:.71rem;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.08em;margin-bottom:11px;padding-bottom:7px;border-bottom:1px solid var(--border);}
+.s-row{display:flex;align-items:center;justify-content:space-between;padding:9px 0;border-bottom:1px solid var(--divider);gap:10px;}
+.s-row:last-child{border-bottom:none;}
+.s-lbl{font-size:.85rem;font-weight:500;}
+.s-desc{font-size:.73rem;color:var(--muted);margin-top:2px;}
+
+/* BATTERY DISPLAY */
+.batt-bar{display:flex;align-items:center;gap:6px;font-size:.75rem;}
+.batt-track{flex:1;height:7px;background:var(--bar-bg);border-radius:6px;overflow:hidden;min-width:50px;}
+.batt-fill{height:100%;border-radius:6px;transition:width .4s;}
+.eff-badge{display:inline-flex;padding:2px 7px;border-radius:5px;font-size:.69rem;font-weight:600;}
+
+/* SCROLLBAR */
+::-webkit-scrollbar{width:5px;height:5px;}
+::-webkit-scrollbar-track{background:var(--surface);}
+::-webkit-scrollbar-thumb{background:var(--border);border-radius:3px;}
+
+/* CHART */
+.ch{position:relative;}
+.ch-sm{height:175px;}
+.ch-md{height:250px;}
+.ch-lg{height:285px;}
+#battChartWrap{max-height:460px;overflow-y:auto;overflow-x:hidden;}
+
+/* RESPONSIVE */
+@media(max-width:768px){
+  .top-nav{display:none;}
+  .bottom-nav{display:block;}
+  .fab{display:flex;}
+  .page{padding:14px 13px 76px;}
+  .grid-4{grid-template-columns:1fr 1fr;}
+  .grid-5{grid-template-columns:1fr 1fr;}
+  .grid-2{grid-template-columns:1fr;}
+  .form-grid{grid-template-columns:1fr;}
+  .form-group.full{grid-column:1;}
+  .toast-wrap{bottom:68px;right:12px;left:12px;max-width:none;}
+  .ch-md{height:210px;}
+  .ch-lg{height:240px;}
+}
+@media(max-width:460px){
+  .grid-4{grid-template-columns:1fr;}
+  .grid-5{grid-template-columns:1fr;}
+}
+@media(min-width:769px){
+  .overlay{align-items:center;padding:16px;}
+  .modal{border-radius:18px;max-width:540px;}
+  .toast-wrap{bottom:24px;}
+}
+</style>
+
+<!-- SETUP -->
+<div class="setup-overlay" id="setupOverlay">
+  <div class="setup-box">
+    <h2>⚡ Connect to Google Sheets</h2>
+    <p class="sub">Your charge log data lives in Google Sheets. Follow these one-time steps to connect:</p>
+    <div class="steps">
+      <div class="step"><div class="step-num">1</div><div>
+        <div class="step-title">Open your Google Sheet</div>
+        <div class="step-desc">Open <strong>Wuling Starlight Charge Log</strong> in Google Sheets (create it if needed — it just needs to exist).</div>
+      </div></div>
+      <div class="step"><div class="step-num">2</div><div>
+        <div class="step-title">Open Apps Script</div>
+        <div class="step-desc">Menu → <code>Extensions → Apps Script</code>. Delete all existing code, paste the script below, then press <code>Save</code>.</div>
+      </div></div>
+      <div class="step"><div class="step-num">3</div><div>
+        <div class="step-title">Deploy as Web App</div>
+        <div class="step-desc">Click <code>Deploy → New deployment</code>. Type: <strong>Web app</strong>. Execute as: <strong>Me</strong>. Access: <strong>Anyone</strong>. Click Deploy, authorize, copy the URL.</div>
+      </div></div>
+      <div class="step"><div class="step-num">4</div><div>
+        <div class="step-title">Paste the URL below</div>
+        <div class="step-desc">Should start with <code>https://script.google.com/macros/s/</code></div>
+      </div></div>
+    </div>
+
+    <details style="margin-bottom:16px;">
+      <summary style="cursor:pointer;font-size:.82rem;font-weight:600;color:var(--accent);margin-bottom:6px;">Show Apps Script code to copy</summary>
+      <div class="script-box" id="scriptBox">const SHEET_NAME = 'ChargeLog';
+const HEADERS = ['id','date','time','odometer','battStart','battEnd','kwhAdded','cost','duration','location','chargerType'];
+// L:T — the sheet's own formula columns. Read-only: never written by addRow/updateRow.
+const CALC_HEADERS = ['range','kmPerPct','bahtPerPct','powerLoss','powerLossPct','dupCount','e20Price','e20Needed','e20Cost'];
+
+/**
+ * Custom Function: Returns historical Thailand Gasohol E20 price for a given date.
+ * If the exact date is not a price-adjustment day, it returns the price in effect on that day.
+ *
+ * @param {Date|string} dateInput The date to check (from column B).
+ * @return {number|string} The E20 price in THB/liter.
+ * @customfunction
+ */
+function GET_E20_PRICE(dateInput) {
+  if (!dateInput) return "";
+
+  // Parse input date to YYYY-MM-DD
+  var d = new Date(dateInput);
+  if (isNaN(d.getTime())) return "Invalid Date";
+
+  var year = d.getFullYear();
+  var month = ("0" + (d.getMonth() + 1)).slice(-2);
+  var day = ("0" + d.getDate()).slice(-2);
+  var dateStr = year + "-" + month + "-" + day;
+
+  // Key historical E20 price changes (Effective Date: Price in THB)
+  // Source: EPPO / Retail Oil Archives (Bangchak / PTT)
+  var priceHistory = [
+    { date: "2026-01-01", price: 34.68 },
+    { date: "2026-03-18", price: 34.68 },
+    { date: "2026-03-21", price: 32.68 },
+    { date: "2026-03-24", price: 34.68 },
+    { date: "2026-03-26", price: 40.68 },
+    { date: "2026-03-31", price: 41.68 },
+    { date: "2026-04-03", price: 38.95 },
+    { date: "2026-04-17", price: 35.95 },
+    { date: "2026-05-13", price: 36.35 },
+    { date: "2026-05-20", price: 37.90 },
+    { date: "2026-05-29", price: 37.90 },
+    { date: "2026-06-04", price: 38.30 },
+    { date: "2026-06-16", price: 41.93 },
+    { date: "2026-06-17", price: 39.98 },
+    { date: "2026-06-19", price: 38.85 },
+    { date: "2026-06-25", price: 37.68 },
+    { date: "2026-07-03", price: 37.08 },
+    { date: "2026-07-08", price: 34.57 },
+    { date: "2026-07-22", price: 35.42 },
+    { date: "2026-07-23", price: 36.32 },
+    { date: "2026-08-06", price: 35.62 },
+    { date: "2026-08-12", price: 36.47 },
+    { date: "2026-08-19", price: 37.32 },
+    { date: "2026-09-02", price: 37.92 },
+    { date: "2026-09-09", price: 38.72 },
+    { date: "2026-09-15", price: 39.57 },
+    { date: "2026-10-02", price: 40.32 },
+    { date: "2026-10-09", price: 41.07 },
+    { date: "2026-10-21", price: 41.67 },
+    { date: "2026-10-29", price: 41.17 },
+    { date: "2026-11-05", price: 40.47 },
+    { date: "2026-11-06", price: 39.47 }
+  ];
+
+  // Find the latest price in effect on or before the given date
+  var effectivePrice = null;
+  for (var i = 0; i < priceHistory.length; i++) {
+    if (priceHistory[i].date <= dateStr) {
+      effectivePrice = priceHistory[i].price;
+    } else {
+      break;
+    }
+  }
+
+  return effectivePrice !== null ? effectivePrice : "Before records";
+}
+
+function doGet(e) {
+  const p = e.parameter;
+  try {
+    switch(p.action) {
+      case 'ping':   return ok(ping());
+      case 'list':   return ok(listRows());
+      case 'add':    return ok(addRow(JSON.parse(p.data)));
+      case 'update': return ok(updateRow(JSON.parse(p.data)));
+      case 'delete': return ok(deleteRow(p.id));
+      default:       return err('Unknown action');
+    }
+  } catch(ex) { return err(ex.message); }
+}
+
+function ok(d)  { return out({status:'ok',...d}); }
+function err(m) { return out({status:'error',message:m}); }
+function out(o) {
+  return ContentService
+    .createTextOutput(JSON.stringify(o))
+    .setMimeType(ContentService.MimeType.JSON);
+}
+
+function getSheet() {
+  const ss = SpreadsheetApp.getActiveSpreadsheet();
+  let sh = ss.getSheetByName(SHEET_NAME);
+  if (!sh) {
+    sh = ss.insertSheet(SHEET_NAME);
+    sh.appendRow(HEADERS);
+    sh.setFrozenRows(1);
+    sh.getRange(1,1,1,HEADERS.length).setFontWeight('bold');
+  }
+  return sh;
+}
+
+function ping() {
+  const sh = getSheet();
+  return { rowCount: Math.max(0, sh.getLastRow()-1), sheetName: sh.getName() };
+}
+
+function listRows() {
+  const sh = getSheet();
+  const last = sh.getLastRow();
+  if (last < 2) return { data: [] };
+  const cols = HEADERS.length + CALC_HEADERS.length; // A:T
+  const vals = sh.getRange(2,1,last-1,cols).getValues();
+  const tz = SpreadsheetApp.getActiveSpreadsheet().getSpreadsheetTimeZone();
+  const data = vals.filter(r => r[0]).map(r => {
+    const o = {};
+    HEADERS.forEach((h,i) => {
+      let v = r[i];
+      if (h === 'date' && v instanceof Date) v = Utilities.formatDate(v, tz, 'yyyy-MM-dd');
+      o[h] = v;
+    });
+    CALC_HEADERS.forEach((h,i) => { o[h] = r[HEADERS.length+i]; });
+    o.odometer = Number(o.odometer)||0;
+    o.battStart = Number(o.battStart)||0;
+    o.battEnd   = Number(o.battEnd)||0;
+    o.kwhAdded  = Number(o.kwhAdded)||0;
+    o.duration  = Number(o.duration)||0;
+    o.cost      = Number(o.cost)||0;
+    o.range        = Number(o.range)||0;
+    o.kmPerPct     = Number(o.kmPerPct)||0;
+    o.bahtPerPct   = Number(o.bahtPerPct)||0;
+    o.powerLoss    = Number(o.powerLoss)||0;
+    o.powerLossPct = Number(o.powerLossPct)||0;
+    o.e20Price     = Number(o.e20Price)||0;
+    o.e20Needed    = Number(o.e20Needed)||0;
+    o.e20Cost      = Number(o.e20Cost)||0;
+    return o;
+  });
+  return { data };
+}
+
+function findRow(id) {
+  const sh = getSheet();
+  const last = sh.getLastRow();
+  if (last < 2) return -1;
+  const ids = sh.getRange(2,1,last-1,1).getValues();
+  for (let i=0;i&lt;ids.length;i++) if (ids[i][0]===id) return i+2;
+  return -1;
+}
+
+function addRow(row) {
+  const sh = getSheet();
+  sh.appendRow(HEADERS.map(h => row[h]!==undefined ? row[h] : ''));
+  const newRow = sh.getLastRow();
+  // Columns L:T are formula columns outside HEADERS (A:K) — carry the
+  // previous row's formulas down so the new row calculates too.
+  if (newRow > 2) {
+    sh.getRange(newRow - 1, 12, 1, 9).copyTo(sh.getRange(newRow, 12, 1, 9));
+  }
+  return { added: row.id };
+}
+
+function updateRow(row) {
+  const r = findRow(row.id);
+  if (r < 0) throw new Error('Row not found: '+row.id);
+  getSheet().getRange(r,1,1,HEADERS.length)
+    .setValues([HEADERS.map(h => row[h]!==undefined ? row[h] : '')]);
+  return { updated: row.id };
+}
+
+function deleteRow(id) {
+  const r = findRow(id);
+  if (r < 0) throw new Error('Row not found: '+id);
+  getSheet().deleteRow(r);
+  return { deleted: id };
+}</div>
+      <button class="btn btn-ghost btn-sm copy-btn" onclick="copyScript()">Copy script</button>
+    </details>
+
+    <div class="url-row">
+      <input type="url" class="url-input" id="apiUrlInput" placeholder="https://script.google.com/macros/s/…/exec">
+      <button class="btn btn-primary" onclick="connectSheet()">Connect</button>
+    </div>
+    <div class="connect-msg" id="connectMsg"></div>
+    <div style="margin-top:18px;padding-top:14px;border-top:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;">
+      <span style="font-size:.74rem;color:var(--muted)">Already connected?</span>
+      <button class="btn btn-ghost btn-sm" onclick="skipSetup()">Skip — continue without syncing</button>
+    </div>
+  </div>
+</div>
+
+<!-- LOADING -->
+<div class="loading-overlay" id="loadingOverlay">
+  <div class="spinner"></div>
+  <div class="loading-msg" id="loadingMsg">Loading…</div>
+</div>
+
+<!-- TOP NAV -->
+<nav class="top-nav">
+  <div class="nav-brand">⚡ Wuling Starlight</div>
+  <button class="nav-tab active" onclick="showPage('dashboard',this)">Dashboard</button>
+  <button class="nav-tab" onclick="showPage('log',this)">Charge Log</button>
+  <button class="nav-tab" onclick="showPage('settings',this)">Settings</button>
+  <div class="nav-right">
+    <div class="offline-pill" id="offlinePill" onclick="syncQueue()" title="Tap to retry sync">⚠ Pending sync</div>
+    <div class="status-dot" id="statusDot"></div>
+    <span class="status-label" id="statusLabel">Not connected</span>
+    <button class="theme-btn" onclick="toggleTheme()" id="themeBtn">☀ Light</button>
+    <button class="btn btn-ghost btn-sm" onclick="exportCSV()">⬇ CSV</button>
+    <button class="btn btn-primary btn-sm" onclick="openAddModal()">+ Log Charge</button>
+  </div>
+</nav>
+
+<!-- DASHBOARD PAGE -->
+<div id="page-dashboard" class="page active">
+  <div class="grid-5 mb16" id="kpiRow"></div>
+
+  <!-- DASHBOARD PERIOD -->
+  <div class="card mb16">
+    <div class="card-header">
+      <span class="card-title">Dashboard Period</span>
+      <div style="display:flex;gap:7px;align-items:center;flex-wrap:wrap;">
+        <select class="si" id="dashFromSel" onchange="onDashPeriodChange()"></select>
+        <span style="color:var(--muted);font-size:.8rem;font-weight:600;padding:0 2px;">to</span>
+        <select class="si" id="dashToSel" onchange="onDashPeriodChange()"></select>
+      </div>
+    </div>
+  </div>
+
+  <div class="grid-2">
+    <div class="card mb16">
+      <div class="card-header"><span class="card-title">Monthly kWh Added</span></div>
+      <div class="ch ch-md"><canvas id="kwhMonthChart"></canvas></div>
+    </div>
+    <div class="card mb16">
+      <div class="card-header"><span class="card-title">Monthly Charging Cost + Savings (฿)</span></div>
+      <div class="ch ch-md"><canvas id="costMonthChart"></canvas></div>
+    </div>
+  </div>
+  <div class="grid-2">
+    <div class="card mb16">
+      <div class="card-header"><span class="card-title">Efficiency per Session (km/%)</span></div>
+      <div class="ch ch-md"><canvas id="effChart"></canvas></div>
+    </div>
+    <div class="card mb16">
+      <div class="card-header"><span class="card-title">Charger Type Breakdown</span></div>
+      <div style="display:flex;align-items:center;gap:14px;flex-wrap:wrap;">
+        <div style="flex:0 0 165px;height:165px;position:relative;min-width:165px;"><canvas id="chargerDonut"></canvas></div>
+        <div style="flex:1;min-width:120px;" id="chargerLegend"></div>
+      </div>
+    </div>
+  </div>
+  <div class="grid-2">
+    <div class="card mb16">
+      <div class="card-header"><span class="card-title">Cost per kWh over Time (฿/kWh)</span></div>
+      <div class="ch ch-sm"><canvas id="costKwhChart"></canvas></div>
+    </div>
+    <div class="card mb16">
+      <div class="card-header"><span class="card-title">Saved vs Petrol per Session (฿)</span></div>
+      <div class="ch ch-sm"><canvas id="thbKmChart"></canvas></div>
+    </div>
+  </div>
+  <div class="card mb16">
+    <div class="card-header"><span class="card-title">Battery Level per Session (%, candlestick)</span></div>
+    <div class="ch ch-sm" id="battChartWrap"><canvas id="battChart"></canvas></div>
+  </div>
+</div>
+
+<!-- CHARGE LOG PAGE -->
+<div id="page-log" class="page">
+  <div class="toolbar">
+    <input type="text" class="si" id="srchQ" placeholder="🔍 Search…" oninput="renderTable()" style="min-width:150px;">
+    <select class="si" id="srchCharger" onchange="renderTable()">
+      <option value="">All charger types</option>
+      <option>Home AC</option><option>Public AC</option><option>DC Fast</option>
+    </select>
+    <select class="si" id="srchMonth" onchange="renderTable()" style="min-width:115px;"><option value="">All months</option></select>
+    <div class="spacer"></div>
+    <button class="btn btn-ghost btn-sm" onclick="refreshData()">↻ Refresh</button>
+    <span id="logCount" style="font-size:.75rem;color:var(--muted);"></span>
+  </div>
+  <div class="table-wrap">
+    <table>
+      <thead><tr>
+        <th onclick="sortBy('date')">Date <span id="sort-date">↓</span></th>
+        <th>Time</th>
+        <th onclick="sortBy('odometer')">Odometer <span id="sort-odometer"></span></th>
+        <th>Batt %</th>
+        <th onclick="sortBy('kwhAdded')">kWh <span id="sort-kwhAdded"></span></th>
+        <th>Charger</th>
+        <th>Duration</th>
+        <th onclick="sortBy('cost')">Cost <span id="sort-cost"></span></th>
+        <th>km Driven</th>
+        <th>km/%</th>
+        <th>฿/kWh</th>
+        <th>฿/%</th>
+        <th>Saved</th>
+        <th>Location</th>
+        <th>Actions</th>
+      </tr></thead>
+      <tbody id="logBody"></tbody>
+    </table>
+    <div style="text-align:center;padding:36px;color:var(--muted);display:none;" id="emptyState">
+      <div style="font-size:2rem;margin-bottom:7px;">🔌</div>No charge sessions yet
+    </div>
+  </div>
+</div>
+
+<!-- SETTINGS PAGE -->
+<div id="page-settings" class="page">
+  <div class="card">
+    <div class="s-section">
+      <h3>Connection</h3>
+      <div class="s-row">
+        <div><div class="s-lbl">Google Sheets Web App URL</div><div class="s-desc" id="apiUrlDisplay" style="word-break:break-all;max-width:340px;"></div></div>
+        <button class="btn btn-ghost btn-sm" onclick="showSetup()">Change</button>
+      </div>
+    </div>
+    <div class="s-section">
+      <h3>Vehicle</h3>
+      <div class="s-row">
+        <div>
+          <div class="s-lbl">Battery Capacity</div>
+          <div class="s-desc">69.2 kWh — baked into the sheet's Power Loss formula. Edit it there if your battery differs.</div>
+        </div>
+      </div>
+    </div>
+    <div class="s-section">
+      <h3>Appearance</h3>
+      <div class="s-row">
+        <div><div class="s-lbl">Theme</div><div class="s-desc">Switch between dark and light mode</div></div>
+        <button class="btn btn-ghost btn-sm" onclick="toggleTheme()" id="settingsThemeBtn">Switch to Light</button>
+      </div>
+    </div>
+    <div class="s-section">
+      <h3>Data</h3>
+      <div class="s-row">
+        <div><div class="s-lbl">Export CSV</div><div class="s-desc">Download all charge sessions as CSV</div></div>
+        <button class="btn btn-ghost btn-sm" onclick="exportCSV()">Export</button>
+      </div>
+      <div class="s-row">
+        <div><div class="s-lbl">Refresh data</div><div class="s-desc">Reload all sessions from Google Sheets</div></div>
+        <button class="btn btn-ghost btn-sm" onclick="refreshData()">↻ Refresh</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- BOTTOM NAV -->
+<nav class="bottom-nav">
+  <div class="bn-inner">
+    <button class="bn-tab active" id="bn-dashboard" onclick="showPage('dashboard',this)">
+      <span class="ico">📊</span>Dashboard
+    </button>
+    <button class="bn-tab" id="bn-log" onclick="showPage('log',this)">
+      <span class="ico">🔌</span>Log
+    </button>
+    <button class="bn-tab" id="bn-settings" onclick="showPage('settings',this)">
+      <span class="ico">⚙️</span>Settings
+    </button>
+  </div>
+</nav>
+
+<button class="fab" onclick="openAddModal()">＋</button>
+
+<!-- ADD / EDIT MODAL -->
+<div class="overlay" id="txOverlay">
+  <div class="modal">
+    <div class="modal-header">
+      <div class="modal-title" id="modalTitle">Log Charge Session</div>
+      <button class="modal-close" onclick="closeModal()">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="form-grid">
+        <div class="form-group">
+          <label class="form-label">Date *</label>
+          <input type="date" class="fc" id="fDate">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Time</label>
+          <input type="time" class="fc" id="fTime">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Odometer (km) *</label>
+          <input type="number" class="fc" id="fOdometer" placeholder="e.g. 12500" step="1" min="0">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Duration (min)</label>
+          <input type="number" class="fc" id="fDuration" placeholder="e.g. 45" step="1" min="0">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Battery Start (%)</label>
+          <input type="number" class="fc" id="fBattStart" placeholder="e.g. 20" step="1" min="0" max="100">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Battery End (%)</label>
+          <input type="number" class="fc" id="fBattEnd" placeholder="e.g. 80" step="1" min="0" max="100">
+        </div>
+        <div class="form-group">
+          <label class="form-label">kWh Added *</label>
+          <input type="number" class="fc" id="fKwh" placeholder="e.g. 28.5" step="0.1" min="0">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Cost (฿)</label>
+          <input type="number" class="fc" id="fCost" placeholder="e.g. 85" step="1" min="0">
+        </div>
+        <div class="form-group full">
+          <label class="form-label">Charger Type *</label>
+          <div class="type-toggle">
+            <button class="type-btn active-home" id="cHome" onclick="setCharger('Home AC')">🏠 Home AC</button>
+            <button class="type-btn" id="cPub" onclick="setCharger('Public AC')">🏢 Public AC</button>
+            <button class="type-btn" id="cDC" onclick="setCharger('DC Fast')">⚡ DC Fast</button>
+          </div>
+          <input type="hidden" id="fChargerType" value="Home AC">
+        </div>
+        <div class="form-group full">
+          <label class="form-label">Location</label>
+          <input type="text" class="fc" id="fLocation" placeholder="e.g. Home, Lotus Ari, Ea Anywhere…" list="locationDL">
+          <datalist id="locationDL"></datalist>
+        </div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeModal()">Cancel</button>
+      <button class="btn btn-primary" id="saveBtn" onclick="saveEntry()">Save Session</button>
+    </div>
+  </div>
+</div>
+
+<!-- CONFIRM DELETE -->
+<div class="overlay" id="confirmOverlay">
+  <div class="modal" style="max-width:370px;">
+    <div class="modal-header"><div class="modal-title">Delete Session?</div><button class="modal-close" onclick="closeConfirm()">✕</button></div>
+    <div class="modal-body" style="padding-top:10px;"><p style="color:var(--muted);font-size:.85rem;" id="confirmMsg"></p></div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeConfirm()">Cancel</button>
+      <button class="btn btn-danger" onclick="confirmDelete()">Delete</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast-wrap" id="toastWrap"></div>
+
+<script>
+const CFG_KEY   = 'evChargeLog_v1_cfg';
+const QUEUE_KEY = 'evChargeLog_v1_queue';
+
+const DEFAULT_CFG = { apiUrl:'', theme:'dark' };
+const MN = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+
+let CFG   = loadCfg();
+let DB    = [];
+let QUEUE = loadQueue();
+let charts = {};
+let sortKey = 'date', sortAsc = false;
+let editingId = null, deleteTargetId = null;
+
+function loadCfg()   { try { return {...DEFAULT_CFG,...JSON.parse(localStorage.getItem(CFG_KEY)||'{}')}; } catch { return {...DEFAULT_CFG}; } }
+function saveCfg()   { localStorage.setItem(CFG_KEY, JSON.stringify(CFG)); }
+function loadQueue() { try { return JSON.parse(localStorage.getItem(QUEUE_KEY)||'[]'); } catch { return []; } }
+function saveQueue() { localStorage.setItem(QUEUE_KEY, JSON.stringify(QUEUE)); }
+
+// ── CHARGER COLORS ──
+const CHARGER_COLORS = { 'Home AC':'#00c896', 'Public AC':'#4fc3f7', 'DC Fast':'#f9c74f' };
+function cc(type) { return CHARGER_COLORS[type] || '#8892b0'; }
+
+// ── FORMAT UTILS ──
+function fmtKwh(n)  { return parseFloat(n||0).toFixed(1) + ' kWh'; }
+function fmtTHB(n)  { return '฿' + parseFloat(n||0).toLocaleString('en',{maximumFractionDigits:0}); }
+function fmtEff(n)  { return parseFloat(n||0).toFixed(2) + ' km/kWh'; }
+function fmtKm(n)   { return parseFloat(n||0).toLocaleString('en',{maximumFractionDigits:0}) + ' km'; }
+function esc(s)     { return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+function nextId()   { return 'ch_'+Date.now()+'_'+Math.random().toString(36).slice(2,6); }
+function isoNorm(iso) {
+  if (!iso) return '';
+  const s = String(iso);
+  // Full ISO timestamp from the backend (raw Date serialized in UTC):
+  // convert to local date so midnight Bangkok doesn't bounce to the previous day.
+  if (s.length > 10 && s.includes('T')) {
+    const d = new Date(s);
+    if (!isNaN(d)) return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+  }
+  return s.slice(0,10);
+}
+function monthTag(iso) { const s=isoNorm(iso); const m=s.slice(5,7); return MN[parseInt(m)-1]||s.slice(0,7); }
+// Month+year key ('YYYY-MM') — unlike monthTag this sorts correctly and
+// never merges the same month from different years, which the dashboard's
+// own period filter and monthly charts rely on.
+function monthKey(iso) { return isoNorm(iso).slice(0,7); }
+function monthKeyLabel(key) { const [y,m]=key.split('-'); return `${MN[parseInt(m)-1]} ${y}`; }
+function isoDisp(iso)  {
+  if(!iso) return '—';
+  const s=isoNorm(iso); const p=s.split('-'); if(p.length!==3) return s;
+  const mi=parseInt(p[1])-1; if(isNaN(mi)||mi<0||mi>11) return s;
+  return `${parseInt(p[2])} ${MN[mi]}`;
+}
+
+// ── DERIVED METRICS ──
+// Range, km/%, ฿/%, Power Loss and E20 Cost all come straight from the
+// sheet's own L:T formulas now (listRows returns them) — this is the one
+// source of truth, so the app no longer recomputes efficiency itself.
+// The only thing added here is "savings vs petrol": E20 Cost for this
+// interval minus the EV cost actually spent driving it. That EV cost is
+// NOT the previous charge's full bill (that charge may cover far more
+// driving than just this interval) — it's (% battery consumed on this
+// drive) x (previous charge's ฿/%), i.e. only the slice of that charge
+// this drive actually used. % consumed = range / kmPerPct, since
+// kmPerPct = range / (% consumed).
+function enrichedDB() {
+  const sorted = [...DB].sort((a,b) => {
+    const dc = a.date.localeCompare(b.date);
+    if (dc !== 0) return dc;
+    return (a.odometer||0) - (b.odometer||0);
+  });
+  for (let i=0; i<sorted.length; i++) {
+    const prev = sorted[i-1];
+    const cur  = sorted[i];
+    cur._thbKwh = (cur.cost > 0 && cur.kwhAdded > 0) ? cur.cost / cur.kwhAdded : null;
+    const pctUsed = (cur.kmPerPct > 0) ? cur.range / cur.kmPerPct : null;
+    const evCost = (prev && pctUsed !== null && prev.bahtPerPct > 0) ? pctUsed * prev.bahtPerPct : null;
+    cur._savings = (cur.e20Cost > 0 && evCost !== null) ? cur.e20Cost - evCost : null;
+  }
+  return sorted;
+}
+
+// ── API ──
+// ApiError = the request reached Google Sheets and it rejected it (bad data,
+// row not found, script error) — retrying won't help, so this is never queued.
+// Any other throw (fetch itself failing, bad JSON) means no real answer came
+// back, so the caller queues it for offline retry instead.
+class ApiError extends Error {}
+async function api(params) {
+  if(!CFG.apiUrl) throw new Error('No API URL');
+  const url = CFG.apiUrl + '?' + Object.entries(params).map(([k,v])=>k+'='+encodeURIComponent(v)).join('&');
+  const res = await fetch(url);
+  let json;
+  try { json = await res.json(); }
+  catch(e) { throw new ApiError('Unexpected response from Google Sheets'); }
+  if(json.status!=='ok') throw new ApiError(json.message||'API error');
+  return json;
+}
+async function apiList()         { return (await api({action:'list'})).data||[]; }
+async function apiAdd(row)       { return api({action:'add', data:JSON.stringify(row)}); }
+async function apiUpdate(row)    { return api({action:'update', data:JSON.stringify(row)}); }
+async function apiDelete(id)     { return api({action:'delete', id}); }
+async function apiPing()         { return api({action:'ping'}); }
+
+// ── OFFLINE QUEUE ──
+function queueOp(op) {
+  QUEUE.push(op); saveQueue();
+  document.querySelectorAll('.offline-pill').forEach(p=>p.classList.add('show'));
+}
+async function syncQueue() {
+  if(!QUEUE.length) return;
+  const todo = [...QUEUE];
+  const stillQueued = [];
+  let syncedCount = 0, rejectedCount = 0, offline = false;
+  for (const op of todo) {
+    if (offline) { stillQueued.push(op); continue; }
+    try {
+      if(op.type==='add')    await apiAdd(op.row);
+      if(op.type==='update') await apiUpdate(op.row);
+      if(op.type==='delete') await apiDelete(op.id);
+      syncedCount++;
+    } catch(e) {
+      if (e instanceof ApiError) rejectedCount++;       // bad op — drop it, retrying won't fix it
+      else { offline = true; stillQueued.push(op); }    // still unreachable — keep for next try
+    }
+  }
+  QUEUE = stillQueued; saveQueue();
+  document.querySelectorAll('.offline-pill').forEach(p=>p.classList.toggle('show', QUEUE.length>0));
+  if (syncedCount)   toast(`Synced ${syncedCount} pending operation${syncedCount>1?'s':''} ✓`,'success');
+  if (rejectedCount) toast(`${rejectedCount} queued change${rejectedCount>1?'s':''} rejected by Google Sheets and dropped`,'error');
+  if (offline && !syncedCount) toast('Sync failed — will retry later','error');
+  if (syncedCount) await refreshData();
+}
+
+// ── THEME ──
+function applyTheme(t) {
+  document.documentElement.setAttribute('data-theme',t);
+  const isDark=t==='dark';
+  document.querySelectorAll('.theme-btn,#settingsThemeBtn').forEach(b=>b.textContent=isDark?'☀ Light':'🌙 Dark');
+  if(Object.keys(charts).length) renderDashboard();
+}
+function toggleTheme() { CFG.theme=CFG.theme==='dark'?'light':'dark'; saveCfg(); applyTheme(CFG.theme); }
+
+// ── STATUS / SETUP ──
+function setStatus(type,label) {
+  document.querySelectorAll('.status-dot').forEach(d=>d.className='status-dot '+(type||''));
+  document.querySelectorAll('.status-label').forEach(l=>l.textContent=label||'');
+}
+function showSetup()  { document.getElementById('setupOverlay').classList.add('open'); }
+function hideSetup()  { document.getElementById('setupOverlay').classList.remove('open'); }
+function skipSetup()  { hideSetup(); renderDashboard(); }
+function showLoading(msg) { document.getElementById('loadingOverlay').classList.add('open'); document.getElementById('loadingMsg').textContent=msg||'Loading…'; }
+function hideLoading()    { document.getElementById('loadingOverlay').classList.remove('open'); }
+
+async function connectSheet() {
+  const url = document.getElementById('apiUrlInput').value.trim();
+  const msg  = document.getElementById('connectMsg');
+  if(!url){ msg.textContent='Please paste your Web App URL.'; msg.className='connect-msg err'; return; }
+  msg.textContent='Connecting…'; msg.className='connect-msg';
+  try {
+    const old=CFG.apiUrl; CFG.apiUrl=url;
+    const info=await apiPing();
+    saveCfg();
+    msg.textContent=`✓ Connected — ${info.rowCount} rows in "${info.sheetName}"`;
+    msg.className='connect-msg ok';
+    setTimeout(async()=>{ hideSetup(); await refreshData(); }, 1200);
+  } catch(e) {
+    CFG.apiUrl=loadCfg().apiUrl||'';
+    msg.textContent='Connection failed: '+e.message; msg.className='connect-msg err';
+  }
+}
+
+function copyScript() {
+  const text = document.getElementById('scriptBox').textContent;
+  navigator.clipboard.writeText(text).then(()=>toast('Script copied to clipboard ✓','success')).catch(()=>toast('Copy failed — select and copy manually','error'));
+}
+
+// ── DATA REFRESH ──
+async function refreshData() {
+  showLoading('Loading from Google Sheets…');
+  try {
+    DB = await apiList();
+    DB.forEach(r=>{ if(r.date) r.date=isoNorm(r.date); });
+    DB.sort((a,b)=>b.date.localeCompare(a.date));
+    setStatus('ok',`Synced · ${DB.length} sessions`);
+    if(QUEUE.length) await syncQueue();
+  } catch(e) {
+    setStatus('err','Not connected');
+    toast(e instanceof ApiError ? 'Google Sheets error: '+e.message : 'Could not reach Google Sheets','error');
+  }
+  hideLoading();
+  renderCurrentPage();
+}
+
+function renderCurrentPage() {
+  const active=document.querySelector('.page.active');
+  if(!active) return;
+  const id=active.id.replace('page-','');
+  if(id==='dashboard') renderDashboard();
+  if(id==='log')       renderTable();
+  if(id==='settings')  renderSettings();
+}
+
+// ── PAGE NAV ──
+function showPage(id,btn) {
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.nav-tab').forEach(t=>t.classList.remove('active'));
+  document.querySelectorAll('.bn-tab').forEach(t=>t.classList.remove('active'));
+  document.getElementById('page-'+id).classList.add('active');
+  document.querySelectorAll('.nav-tab').forEach(t=>{
+    const txt=t.textContent.trim().toLowerCase();
+    if((id==='dashboard'&&txt.includes('dashboard'))||(id==='log'&&txt.includes('log'))||(id==='settings'&&txt.includes('settings'))) t.classList.add('active');
+  });
+  const bn=document.getElementById('bn-'+id); if(bn) bn.classList.add('active');
+  if(id==='dashboard') renderDashboard();
+  if(id==='log')       renderTable();
+  if(id==='settings')  renderSettings();
+}
+
+// ── DASHBOARD ──
+function dc(id) { if(charts[id]){ try{charts[id].destroy();}catch(e){} delete charts[id]; } }
+
+// ── DASHBOARD PERIOD (month/year range) ──
+let dashFrom=null, dashTo=null;
+function renderPeriodPicker() {
+  const keys=[...new Set(DB.map(r=>monthKey(r.date)))].sort();
+  const selF=document.getElementById('dashFromSel'), selT=document.getElementById('dashToSel');
+  if(!selF||!selT) return;
+  if(!keys.length){ selF.innerHTML=selT.innerHTML='<option value="">No data</option>'; return; }
+  if(!dashFrom||!keys.includes(dashFrom)) dashFrom=keys[0];
+  if(!dashTo||!keys.includes(dashTo))     dashTo=keys[keys.length-1];
+  const opts=keys.map(k=>`<option value="${k}">${monthKeyLabel(k)}</option>`).join('');
+  selF.innerHTML=opts; selT.innerHTML=opts;
+  selF.value=dashFrom; selT.value=dashTo;
+}
+function onDashPeriodChange() {
+  dashFrom=document.getElementById('dashFromSel').value;
+  dashTo=document.getElementById('dashToSel').value;
+  if(dashFrom&&dashTo&&dashFrom>dashTo) [dashFrom,dashTo]=[dashTo,dashFrom];
+  renderDashboard();
+}
+function periodFilter(rows) {
+  if(!dashFrom||!dashTo) return rows;
+  return rows.filter(r=>{ const k=monthKey(r.date); return k>=dashFrom&&k<=dashTo; });
+}
+
+// Draws the stack total (cost+savings) above each bar's topmost segment.
+const totalLabelPlugin = {
+  id:'totalLabel',
+  afterDatasetsDraw(chart,args,opts) {
+    const totals=opts&&opts.totals; if(!totals) return;
+    const ctx=chart.ctx;
+    const metas=chart.data.datasets.map((_,i)=>chart.getDatasetMeta(i));
+    metas[0].data.forEach((bar,i)=>{
+      const total=totals[i]; if(total===undefined||total===null) return;
+      let topY=Infinity;
+      metas.forEach(m=>{ const el=m.data[i]; if(el){ topY=Math.min(topY,el.y,el.base??el.y); } });
+      ctx.save();
+      ctx.fillStyle='var(--text)';
+      ctx.font='600 10px -apple-system,BlinkMacSystemFont,sans-serif';
+      ctx.textAlign='center';
+      ctx.fillText('฿'+Math.round(total).toLocaleString(),bar.x,topY-8);
+      ctx.restore();
+    });
+  }
+};
+
+function renderDashboard() {
+  renderPeriodPicker();
+  const eDB = periodFilter(enrichedDB());
+  const totalKwh   = eDB.reduce((s,r)=>s+r.kwhAdded,0);
+  const totalCost  = eDB.reduce((s,r)=>s+r.cost,0);
+  const totalSess  = eDB.length;
+  const kmPctSessions = eDB.filter(r=>r.kmPerPct>0);
+  const avgKmPct = kmPctSessions.length ? kmPctSessions.reduce((s,r)=>s+r.kmPerPct,0)/kmPctSessions.length : 0;
+  const totalRange = eDB.reduce((s,r)=>s+(r.range||0),0);
+  const avgCostKwh = totalKwh>0 ? totalCost/totalKwh : 0;
+  const savingsRows = eDB.filter(r=>r._savings!==null);
+  const totalSavings = savingsRows.reduce((s,r)=>s+r._savings,0);
+
+  document.getElementById('kpiRow').innerHTML=`
+    <div class="kpi teal"><div class="lbl">Total Sessions</div><div class="val" style="color:var(--accent)">${totalSess}</div><div class="sub">Selected period</div></div>
+    <div class="kpi blue"><div class="lbl">Total kWh Added</div><div class="val" style="color:var(--blue)">${totalKwh.toFixed(1)}</div><div class="sub">${fmtKm(totalRange)} driven</div></div>
+    <div class="kpi yellow"><div class="lbl">Total Cost</div><div class="val" style="color:var(--yellow)">${fmtTHB(totalCost)}</div><div class="sub">${fmtTHB(avgCostKwh)}/kWh avg</div></div>
+    <div class="kpi green"><div class="lbl">Avg Efficiency</div><div class="val" style="color:var(--green)">${avgKmPct>0?avgKmPct.toFixed(2):'—'}</div><div class="sub">km / % battery</div></div>
+    <div class="kpi purple"><div class="lbl">Saved vs Petrol</div><div class="val" style="color:${totalSavings>=0?'var(--green)':'var(--red)'}">${savingsRows.length?fmtTHB(totalSavings):'—'}</div><div class="sub">vs E20 equivalent</div></div>`;
+
+  const allMonthKeys=[...new Set(eDB.map(r=>monthKey(r.date)))].sort();
+  const allMonths=allMonthKeys.map(monthKeyLabel);
+
+  // Monthly kWh — value labeled inside each bar
+  dc('kwhMonth');
+  const kwhOpts=chartOpts(v=>v.toFixed(1)+' kWh');
+  kwhOpts.plugins.datalabels={color:'#0a0a0a',textStrokeColor:'rgba(255,255,255,.65)',textStrokeWidth:2,
+    font:{size:9,weight:'600'},anchor:'center',align:'center',
+    formatter:v=>v>0?v.toFixed(1):'',display:ctx=>ctx.dataset.data[ctx.dataIndex]>0?'auto':false};
+  charts['kwhMonth']=new Chart(document.getElementById('kwhMonthChart').getContext('2d'),{
+    type:'bar',
+    data:{labels:allMonths,datasets:[{label:'kWh',data:allMonthKeys.map(k=>eDB.filter(r=>monthKey(r.date)===k).reduce((s,r)=>s+r.kwhAdded,0)),backgroundColor:'rgba(0,200,150,.7)',borderColor:'#00c896',borderWidth:1,borderRadius:5}]},
+    options:kwhOpts,
+    plugins:[ChartDataLabels]
+  });
+
+  // Monthly cost (bottom) + savings vs petrol (upper) — stacked, with the
+  // combined total labeled above each bar, and each layer's own value
+  // labeled inside it.
+  dc('costMonth');
+  const monthCost=allMonthKeys.map(k=>eDB.filter(r=>monthKey(r.date)===k).reduce((s,r)=>s+r.cost,0));
+  const monthSavings=allMonthKeys.map(k=>eDB.filter(r=>monthKey(r.date)===k&&r._savings!==null).reduce((s,r)=>s+r._savings,0));
+  const monthTotals=monthCost.map((c,i)=>c+monthSavings[i]);
+  charts['costMonth']=new Chart(document.getElementById('costMonthChart').getContext('2d'),{
+    type:'bar',
+    data:{labels:allMonths,datasets:[
+      {label:'Charging Cost',data:monthCost,stack:'s',backgroundColor:'rgba(249,199,79,.75)',borderColor:'#f9c74f',borderWidth:1,borderRadius:4,
+        datalabels:{color:'#1a1a1a',textStrokeColor:'rgba(255,255,255,.6)',textStrokeWidth:2,font:{size:9,weight:'600'},
+          anchor:'center',align:'center',formatter:v=>v>0?'฿'+Math.round(v).toLocaleString():'',
+          display:ctx=>ctx.dataset.data[ctx.dataIndex]>0?'auto':false}},
+      {label:'Saved vs Petrol',data:monthSavings,stack:'s',
+        backgroundColor:monthSavings.map(v=>v>=0?'rgba(67,233,123,.75)':'rgba(255,107,107,.75)'),
+        borderColor:monthSavings.map(v=>v>=0?'#43e97b':'#ff6b6b'),borderWidth:1,borderRadius:4,
+        datalabels:{color:'#1a1a1a',textStrokeColor:'rgba(255,255,255,.6)',textStrokeWidth:2,font:{size:9,weight:'600'},
+          anchor:'center',align:'center',formatter:v=>v!==0?(v>=0?'+':'-')+'฿'+Math.abs(Math.round(v)).toLocaleString():'',
+          display:ctx=>ctx.dataset.data[ctx.dataIndex]!==0?'auto':false}}
+    ]},
+    options:{responsive:true,maintainAspectRatio:false,
+      layout:{padding:{top:24}},
+      plugins:{
+        legend:{labels:{color:'var(--text)',font:{size:10}}},
+        tooltip:{callbacks:{label:ctx=>` ${ctx.dataset.label}: ${ctx.parsed.y<0?'-':''}฿${Math.abs(ctx.parsed.y).toFixed(0)}`}},
+        totalLabel:{totals:monthTotals}
+      },
+      scales:{
+        x:{stacked:true,grid:{color:'rgba(128,128,128,.06)'},ticks:{color:'var(--muted)',font:{size:10}}},
+        y:{stacked:true,grid:{color:'rgba(128,128,128,.08)'},ticks:{color:'var(--muted)',font:{size:10},callback:v=>'฿'+v}}
+      }
+    },
+    plugins:[ChartDataLabels,totalLabelPlugin]
+  });
+
+  // Efficiency per session (chronological) — km per 1% battery, from the sheet
+  const effRows=eDB.filter(r=>r.kmPerPct>0);
+  dc('eff');
+  charts['eff']=new Chart(document.getElementById('effChart').getContext('2d'),{
+    type:'line',
+    data:{labels:effRows.map(r=>isoDisp(r.date)),datasets:[
+      {label:'km/%',data:effRows.map(r=>r.kmPerPct),fill:true,
+        backgroundColor:ctx2=>{const g=ctx2.chart.ctx.createLinearGradient(0,0,0,180);g.addColorStop(0,'rgba(0,200,150,.28)');g.addColorStop(1,'rgba(0,200,150,0)');return g;},
+        borderColor:'var(--accent)',pointBackgroundColor:'var(--accent)',pointRadius:3,pointHoverRadius:6,tension:.3,borderWidth:2},
+      {label:'Avg',data:effRows.map(()=>avgKmPct),borderColor:'rgba(255,255,255,.25)',borderDash:[4,4],borderWidth:1,pointRadius:0,fill:false}
+    ]},
+    options:{responsive:true,maintainAspectRatio:false,
+      plugins:{legend:{labels:{color:'var(--text)',font:{size:10}}},tooltip:{callbacks:{label:ctx=>` ${ctx.parsed.y.toFixed(2)} km/%`}}},
+      scales:{x:{grid:{color:'rgba(128,128,128,.06)'},ticks:{color:'var(--muted)',font:{size:10},maxRotation:45,maxTicksLimit:14}},
+        y:{grid:{color:'rgba(128,128,128,.08)'},ticks:{color:'var(--muted)',font:{size:10},callback:v=>v.toFixed(1)}}}}
+  });
+
+  // Charger type donut
+  const chargerMap={};
+  eDB.forEach(r=>{ const t=r.chargerType||'Unknown'; chargerMap[t]=(chargerMap[t]||0)+1; });
+  const chargerSorted=Object.entries(chargerMap).sort((a,b)=>b[1]-a[1]);
+  dc('chargerDonut');
+  document.getElementById('chargerLegend').innerHTML=chargerSorted.map(([t,c])=>`
+    <div style="display:flex;align-items:center;gap:5px;padding:2px 0;">
+      <div style="width:7px;height:7px;border-radius:2px;background:${cc(t)};flex-shrink:0;"></div>
+      <div style="flex:1;font-size:.75rem;color:var(--text);">${t}</div>
+      <div style="font-size:.72rem;color:var(--muted);">${c} sess</div>
+    </div>`).join('');
+  charts['chargerDonut']=new Chart(document.getElementById('chargerDonut').getContext('2d'),{
+    type:'doughnut',
+    data:{labels:chargerSorted.map(c=>c[0]),datasets:[{data:chargerSorted.map(c=>c[1]),backgroundColor:chargerSorted.map(c=>cc(c[0])),borderWidth:0,hoverOffset:6}]},
+    options:{cutout:'68%',responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{callbacks:{label:ctx=>` ${ctx.parsed} sessions`}}}}
+  });
+
+  // Cost per kWh over time
+  const cKwhRows=eDB.filter(r=>r._thbKwh!==null&&r._thbKwh>0);
+  dc('costKwh');
+  charts['costKwh']=new Chart(document.getElementById('costKwhChart').getContext('2d'),{
+    type:'line',
+    data:{labels:cKwhRows.map(r=>isoDisp(r.date)),datasets:[{label:'฿/kWh',data:cKwhRows.map(r=>r._thbKwh),fill:true,
+      backgroundColor:ctx2=>{const g=ctx2.chart.ctx.createLinearGradient(0,0,0,120);g.addColorStop(0,'rgba(249,199,79,.25)');g.addColorStop(1,'rgba(249,199,79,0)');return g;},
+      borderColor:'var(--yellow)',pointBackgroundColor:'var(--yellow)',pointRadius:3,tension:.3,borderWidth:2}]},
+    options:{responsive:true,maintainAspectRatio:false,
+      plugins:{legend:{display:false},tooltip:{callbacks:{label:ctx=>` ฿${ctx.parsed.y.toFixed(2)}/kWh`}}},
+      scales:{x:{grid:{color:'rgba(128,128,128,.06)'},ticks:{color:'var(--muted)',font:{size:10},maxRotation:45,maxTicksLimit:14}},
+        y:{grid:{color:'rgba(128,128,128,.08)'},ticks:{color:'var(--muted)',font:{size:10},callback:v=>'฿'+v.toFixed(1)}}}}
+  });
+
+  // Savings vs petrol per session — E20 equivalent cost minus actual charging cost
+  const savRows=eDB.filter(r=>r._savings!==null);
+  dc('savings');
+  charts['savings']=new Chart(document.getElementById('thbKmChart').getContext('2d'),{
+    type:'bar',
+    data:{labels:savRows.map(r=>isoDisp(r.date)),datasets:[{label:'฿ saved',data:savRows.map(r=>r._savings),
+      backgroundColor:savRows.map(r=>r._savings>=0?'rgba(67,233,123,.7)':'rgba(255,107,107,.7)'),
+      borderColor:savRows.map(r=>r._savings>=0?'#43e97b':'#ff6b6b'),borderWidth:1,borderRadius:4,
+      datalabels:{color:'#1a1a1a',textStrokeColor:'rgba(255,255,255,.6)',textStrokeWidth:2,font:{size:8,weight:'600'},
+        anchor:'center',align:'center',formatter:v=>(v>=0?'+':'-')+Math.abs(Math.round(v)),
+        display:ctx=>ctx.dataset.data[ctx.dataIndex]!==0?'auto':false}}]},
+    options:{responsive:true,maintainAspectRatio:false,
+      plugins:{legend:{display:false},tooltip:{callbacks:{label:ctx=>` ${ctx.parsed.y>=0?'+':''}฿${ctx.parsed.y.toFixed(2)} vs petrol`}}},
+      scales:{x:{grid:{color:'rgba(128,128,128,.06)'},ticks:{color:'var(--muted)',font:{size:10},maxRotation:45,maxTicksLimit:14}},
+        y:{grid:{color:'rgba(128,128,128,.08)'},ticks:{color:'var(--muted)',font:{size:10},callback:v=>'฿'+v.toFixed(0)}}}},
+    plugins:[ChartDataLabels]
+  });
+
+  // Battery level per session — floating ("candlestick") bar from battStart
+  // to battEnd. Horizontal (indexAxis:'y') so dates stack downward instead
+  // of cramming along the x-axis on mobile; most recent session on top, and
+  // the wrapper (#battChartWrap, see CSS) scrolls vertically to see older
+  // ones instead of squeezing everything into one screen width.
+  const battRows=[...eDB.filter(r=>r.battStart>0||r.battEnd>0)].reverse();
+  dc('batt');
+  const battWrap=document.getElementById('battChartWrap');
+  if(battWrap) battWrap.style.height=Math.max(175,battRows.length*32+20)+'px';
+  charts['batt']=new Chart(document.getElementById('battChart').getContext('2d'),{
+    type:'bar',
+    data:{labels:battRows.map(r=>isoDisp(r.date)),datasets:[
+      {label:'Battery %',data:battRows.map(r=>[r.battStart,r.battEnd]),
+        backgroundColor:'rgba(0,200,150,.5)',borderColor:'#00c896',borderWidth:1,borderRadius:3,borderSkipped:false,
+        datalabels:{
+          labels:{
+            start:{anchor:'start',align:'left',offset:4,color:'var(--red)',font:{size:9,weight:'600'},
+              formatter:(v,ctx)=>battRows[ctx.dataIndex].battStart+'%'},
+            end:{anchor:'end',align:'right',offset:4,color:'var(--green)',font:{size:9,weight:'600'},
+              formatter:(v,ctx)=>battRows[ctx.dataIndex].battEnd+'%'}
+          }
+        }}
+    ]},
+    options:{responsive:true,maintainAspectRatio:false,indexAxis:'y',
+      layout:{padding:{left:20,right:20}},
+      plugins:{legend:{display:false},
+        tooltip:{callbacks:{label:ctx=>{const r=battRows[ctx.dataIndex]; return ` ${r.battStart}% → ${r.battEnd}%`;}}}},
+      scales:{x:{min:0,max:100,grid:{color:'rgba(128,128,128,.08)'},ticks:{color:'var(--muted)',font:{size:10},callback:v=>v+'%'}},
+        y:{grid:{color:'rgba(128,128,128,.06)'},ticks:{color:'var(--muted)',font:{size:10}}}}},
+    plugins:[ChartDataLabels]
+  });
+}
+
+function chartOpts(tooltipFn) {
+  return {
+    responsive:true,maintainAspectRatio:false,
+    plugins:{legend:{display:false},tooltip:{callbacks:{label:ctx=>` ${tooltipFn(ctx.parsed.y)}`}}},
+    scales:{
+      x:{grid:{color:'rgba(128,128,128,.06)'},ticks:{color:'var(--muted)',font:{size:10}}},
+      y:{grid:{color:'rgba(128,128,128,.08)'},ticks:{color:'var(--muted)',font:{size:10},callback:tooltipFn}}
+    }
+  };
+}
+
+
+// ── LOG TABLE ──
+function sortBy(k) {
+  if(sortKey===k) sortAsc=!sortAsc; else { sortKey=k; sortAsc=false; }
+  ['date','odometer','kwhAdded','cost'].forEach(s=>{const el=document.getElementById('sort-'+s);if(el)el.textContent=s===sortKey?(sortAsc?'↑':'↓'):'';});
+  renderTable();
+}
+
+function renderTable() {
+  const monSel=document.getElementById('srchMonth'), prevMon=monSel.value;
+  monSel.innerHTML='<option value="">All months</option>';
+  [...new Set(DB.map(r=>monthTag(r.date)))].sort((a,b)=>MN.indexOf(b)-MN.indexOf(a))
+    .forEach(m=>{ const o=document.createElement('option');o.value=m;o.text=m;if(m===prevMon)o.selected=true;monSel.appendChild(o); });
+
+  const q       = document.getElementById('srchQ').value.toLowerCase();
+  const charger = document.getElementById('srchCharger').value;
+  const month   = document.getElementById('srchMonth').value;
+
+  const eDB = enrichedDB();
+  let rows = eDB.filter(r=>{
+    const mq = !q || [r.location,r.chargerType,isoDisp(r.date),String(r.odometer),String(r.kwhAdded)].some(v=>(v||'').toLowerCase().includes(q));
+    return mq && (!charger||r.chargerType===charger) && (!month||monthTag(r.date)===month);
+  });
+  rows.sort((a,b)=>{
+    let va=a[sortKey],vb=b[sortKey];
+    if(['odometer','kwhAdded','cost'].includes(sortKey)){va=+va;vb=+vb;}
+    return(va<vb?-1:va>vb?1:0)*(sortAsc?1:-1);
+  });
+
+  const body=document.getElementById('logBody');
+  body.innerHTML=rows.map(r=>{
+    const battHtml = (r.battStart||r.battEnd) ? `
+      <div class="batt-bar">
+        <span style="color:var(--red);font-size:.7rem;">${r.battStart||'?'}%</span>
+        <div class="batt-track"><div class="batt-fill" style="width:${r.battEnd||0}%;background:var(--green)"></div></div>
+        <span style="color:var(--green);font-size:.7rem;">${r.battEnd||'?'}%</span>
+      </div>` : '<span style="color:var(--muted)">—</span>';
+    const effHtml = r.kmPerPct>0
+      ? `<span class="eff-badge" style="background:rgba(0,200,150,.15);color:var(--accent)">${r.kmPerPct.toFixed(2)}</span>`
+      : '<span style="color:var(--muted)">—</span>';
+    const savHtml = r._savings!==null
+      ? `<span style="color:${r._savings>=0?'var(--green)':'var(--red)'};font-weight:600;">${r._savings>=0?'+':''}฿${r._savings.toFixed(0)}</span>`
+      : '<span style="color:var(--muted)">—</span>';
+    return `<tr>
+      <td style="color:var(--muted);font-size:.75rem;white-space:nowrap;">${isoDisp(r.date)}</td>
+      <td style="color:var(--muted);font-size:.75rem;">${r.time||'—'}</td>
+      <td style="font-weight:500;">${r.odometer?fmtKm(r.odometer):'—'}</td>
+      <td>${battHtml}</td>
+      <td style="font-weight:600;color:var(--blue)">${r.kwhAdded?r.kwhAdded.toFixed(1):'—'}</td>
+      <td><span class="charger-pill" style="background:${cc(r.chargerType)}22;color:${cc(r.chargerType)}">${esc(r.chargerType||'—')}</span></td>
+      <td style="color:var(--muted);">${r.duration?r.duration+' min':'—'}</td>
+      <td style="font-weight:600;color:var(--yellow)">${r.cost?fmtTHB(r.cost):'—'}</td>
+      <td style="color:var(--muted);">${r.range>0?fmtKm(r.range):'—'}</td>
+      <td>${effHtml}</td>
+      <td style="color:var(--muted);">${r._thbKwh?'฿'+r._thbKwh.toFixed(2):'—'}</td>
+      <td style="color:var(--purple);font-weight:600;">${r.bahtPerPct>0?'฿'+r.bahtPerPct.toFixed(2):'—'}</td>
+      <td>${savHtml}</td>
+      <td style="color:var(--muted);max-width:120px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${esc(r.location||'—')}</td>
+      <td><div class="action-btns">
+        <button class="btn btn-ghost btn-sm btn-icon" onclick="openEditModal('${r.id}')" title="Edit">✏️</button>
+        <button class="btn btn-danger btn-sm btn-icon" onclick="askDelete('${r.id}')" title="Delete">🗑</button>
+      </div></td></tr>`;
+  }).join('');
+  document.getElementById('emptyState').style.display=rows.length?'none':'block';
+  document.getElementById('logCount').textContent=`${rows.length} of ${DB.length} sessions`;
+}
+
+// ── ADD / EDIT MODAL ──
+function setCharger(type) {
+  document.getElementById('fChargerType').value=type;
+  document.getElementById('cHome').className='type-btn'+(type==='Home AC'?' active-home':'');
+  document.getElementById('cPub').className='type-btn'+(type==='Public AC'?' active-pub':'');
+  document.getElementById('cDC').className='type-btn'+(type==='DC Fast'?' active-dc':'');
+}
+function refreshLocationDL() {
+  document.getElementById('locationDL').innerHTML=[...new Set(DB.map(r=>r.location).filter(Boolean))].sort().map(v=>`<option value="${esc(v)}">`).join('');
+}
+
+function openAddModal() {
+  editingId=null;
+  document.getElementById('modalTitle').textContent='Log Charge Session';
+  ['fDate','fTime','fOdometer','fDuration','fBattStart','fBattEnd','fKwh','fCost','fLocation'].forEach(id=>document.getElementById(id).value='');
+  const now=new Date();
+  document.getElementById('fDate').value=now.toISOString().slice(0,10);
+  document.getElementById('fTime').value=now.toTimeString().slice(0,5);
+  setCharger(CFG.lastCharger||'Home AC');
+  refreshLocationDL();
+  document.getElementById('txOverlay').classList.add('open');
+}
+function openEditModal(id) {
+  const r=DB.find(x=>x.id===id); if(!r) return;
+  editingId=id;
+  document.getElementById('modalTitle').textContent='Edit Charge Session';
+  document.getElementById('fDate').value=r.date;
+  document.getElementById('fTime').value=r.time||'';
+  document.getElementById('fOdometer').value=r.odometer||'';
+  document.getElementById('fDuration').value=r.duration||'';
+  document.getElementById('fBattStart').value=r.battStart||'';
+  document.getElementById('fBattEnd').value=r.battEnd||'';
+  document.getElementById('fKwh').value=r.kwhAdded||'';
+  document.getElementById('fCost').value=r.cost||'';
+  document.getElementById('fLocation').value=r.location||'';
+  setCharger(r.chargerType||'Home AC');
+  refreshLocationDL();
+  document.getElementById('txOverlay').classList.add('open');
+}
+function closeModal() { document.getElementById('txOverlay').classList.remove('open'); }
+
+async function saveEntry() {
+  const date     = document.getElementById('fDate').value;
+  const kwhAdded = parseFloat(document.getElementById('fKwh').value);
+  const chargerType = document.getElementById('fChargerType').value;
+  if(!date||!chargerType||isNaN(kwhAdded)||kwhAdded<=0) {
+    toast('Fill in Date, kWh Added and Charger Type','error'); return;
+  }
+  const saveBtn=document.getElementById('saveBtn');
+  saveBtn.disabled=true; saveBtn.textContent='Saving…';
+  const entry={
+    id:         editingId||nextId(),
+    date,
+    time:       document.getElementById('fTime').value,
+    odometer:   parseFloat(document.getElementById('fOdometer').value)||0,
+    battStart:  parseFloat(document.getElementById('fBattStart').value)||0,
+    battEnd:    parseFloat(document.getElementById('fBattEnd').value)||0,
+    kwhAdded,
+    chargerType,
+    duration:   parseFloat(document.getElementById('fDuration').value)||0,
+    cost:       parseFloat(document.getElementById('fCost').value)||0,
+    location:   document.getElementById('fLocation').value.trim()
+  };
+  try {
+    if(editingId) {
+      await apiUpdate(entry);
+      const i=DB.findIndex(x=>x.id===editingId); if(i>-1) DB[i]=entry;
+      toast('Session updated ✓','success');
+    } else {
+      await apiAdd(entry);
+      DB.unshift(entry);
+      toast('Session logged ✓','success');
+    }
+    CFG.lastCharger=chargerType; saveCfg();
+  } catch(e) {
+    if (e instanceof ApiError) {
+      toast('Could not save: '+e.message,'error');
+    } else {
+      queueOp(editingId?{type:'update',row:entry}:{type:'add',row:entry});
+      if(editingId){ const i=DB.findIndex(x=>x.id===editingId); if(i>-1) DB[i]=entry; } else DB.unshift(entry);
+      toast('Saved locally — will sync when online','error');
+    }
+  }
+  saveBtn.disabled=false; saveBtn.textContent='Save Session';
+  closeModal();
+  renderCurrentPage();
+}
+
+// ── DELETE ──
+function askDelete(id) {
+  const r=DB.find(x=>x.id===id); if(!r) return;
+  deleteTargetId=id;
+  document.getElementById('confirmMsg').textContent=`Delete charge session on ${isoDisp(r.date)} (${r.kwhAdded} kWh at ${r.location||r.chargerType})? Cannot be undone.`;
+  document.getElementById('confirmOverlay').classList.add('open');
+}
+function closeConfirm() { document.getElementById('confirmOverlay').classList.remove('open'); deleteTargetId=null; }
+async function confirmDelete() {
+  if(!deleteTargetId) return;
+  try {
+    await apiDelete(deleteTargetId);
+    DB=DB.filter(x=>x.id!==deleteTargetId);
+    toast('Session deleted','success');
+  } catch(e) {
+    if (e instanceof ApiError) {
+      toast('Could not delete: '+e.message,'error');
+    } else {
+      queueOp({type:'delete',id:deleteTargetId});
+      DB=DB.filter(x=>x.id!==deleteTargetId);
+      toast('Deleted locally — will sync when online','error');
+    }
+  }
+  closeConfirm(); renderCurrentPage();
+}
+
+// ── SETTINGS ──
+function renderSettings() {
+  const url=CFG.apiUrl;
+  document.getElementById('apiUrlDisplay').textContent=url?url.slice(0,60)+'…':'Not connected';
+  const t=CFG.theme||'dark';
+  document.querySelectorAll('#settingsThemeBtn').forEach(b=>b.textContent=t==='dark'?'Switch to Light':'Switch to Dark');
+}
+
+// ── CSV EXPORT ──
+function exportCSV() {
+  const h='Date,Time,Odometer,BattStart,BattEnd,kWhAdded,ChargerType,Duration(min),Cost(THB),Location\n';
+  const r=DB.map(row=>[row.date,row.time,row.odometer,row.battStart,row.battEnd,row.kwhAdded,row.chargerType,row.duration,row.cost,row.location]
+    .map(v=>`"${String(v||'').replace(/"/g,'""')}"`).join(',')).join('\n');
+  const blob=new Blob([h+r],{type:'text/csv'});
+  const a=document.createElement('a'); a.href=URL.createObjectURL(blob);
+  a.download=`Wuling_Charge_Log_${new Date().toISOString().slice(0,10)}.csv`; a.click();
+  toast('CSV exported ✓','success');
+}
+
+// ── TOAST ──
+function toast(msg,type='success') {
+  const el=document.createElement('div'); el.className='toast '+type;
+  el.innerHTML=(type==='success'?'<span style="color:var(--green)">✓</span>':'<span style="color:var(--red)">⚠</span>')+' '+msg;
+  document.getElementById('toastWrap').appendChild(el);
+  setTimeout(()=>el.remove(),3500);
+}
+
+// ── BACKDROP CLOSE ──
+document.getElementById('txOverlay').addEventListener('click',e=>{ if(e.target===e.currentTarget)closeModal(); });
+document.getElementById('confirmOverlay').addEventListener('click',e=>{ if(e.target===e.currentTarget)closeConfirm(); });
+
+// ── INIT ──
+window.addEventListener('DOMContentLoaded', async () => {
+  applyTheme(CFG.theme||'dark');
+  if(QUEUE.length) document.querySelectorAll('.offline-pill').forEach(p=>p.classList.add('show'));
+  if(!CFG.apiUrl){ showSetup(); return; }
+  await refreshData();
+});
+</script>
+
+</body></html>
